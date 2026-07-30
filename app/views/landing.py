@@ -63,10 +63,10 @@ def show():
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}}
 body{{background:#070b24;color:white;overflow-x:hidden;}}
-.bg{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;}}
-.bg img{{width:100%;height:100%;object-fit:cover;}}
-.overlay{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;background:linear-gradient(180deg,rgba(7,11,36,0.92) 0%,rgba(7,11,36,0.6) 40%,rgba(7,11,36,0.88) 100%);}}
-.content{{position:relative;z-index:2;padding:12px 20px 20px;max-width:1200px;margin:0 auto;}}
+.bg{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;overflow:hidden;}}
+.bg img{{width:100%;height:100%;object-fit:cover;filter:blur(4px) brightness(0.5);}}
+.overlay{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;background:linear-gradient(180deg,rgba(7,11,36,0.96) 0%,rgba(7,11,36,0.75) 40%,rgba(7,11,36,0.93) 100%);}}
+.content{{position:relative;z-index:2;padding:12px 24px 20px;max-width:1280px;margin:0 auto;min-height:100vh;}}
 .header{{display:flex;align-items:center;gap:14px;margin-bottom:4px;}}
 .header img{{height:48px;filter:drop-shadow(0 0 20px rgba(0,212,255,0.2));}}
 .header span{{color:#00d4ff;font-weight:700;font-size:14px;letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.3);}}
