@@ -1,13 +1,9 @@
 import streamlit as st
 import pandas as pd
 import json
-import math
-import time
 import streamlit.components.v1 as components
-from datetime import datetime
 from app.database.connection import get_conn
 from app.utils.config import get_api_key
-from app.utils.helpers import haversine
 
 def show():
     API_KEY = get_api_key()
@@ -77,35 +73,7 @@ def show():
         st.warning("Este usuario no tiene datos de telemetría.")
         return
 
-    idx = st.session_state.get("tl_idx", len(df) - 1)
-    if idx >= len(df):
-        idx = len(df) - 1
-    idx = st.slider("Línea de tiempo", 0, len(df) - 1, idx)
-    st.session_state.tl_idx = idx
-    punto = df.iloc[idx]
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1: st.metric("Velocidad", f"{punto['speed_kmh']:.0f} km/h")
-    with col2: st.metric("Dirección", f"{punto['heading_deg']:.0f}°")
-    with col3: st.metric("Evento", punto["event_type"].replace("_", " ").title())
-    with col4: st.metric("Hora", punto["recorded_at"][-8:] if punto["recorded_at"] else "-")
-
-    dist_total = sum(haversine(df.iloc[i-1]["latitude"], df.iloc[i-1]["longitude"],
-                                df.iloc[i]["latitude"], df.iloc[i]["longitude"])
-                     for i in range(1, len(df)))
-    avg_speed = df["speed_kmh"].mean()
-    total_time = "—"
-    if len(df) >= 2 and df.iloc[0]["recorded_at"] and df.iloc[-1]["recorded_at"]:
-        t0 = datetime.fromisoformat(df.iloc[0]["recorded_at"])
-        t1 = datetime.fromisoformat(df.iloc[-1]["recorded_at"])
-        total_time = str(t1 - t0).split(".")[0]
-
-    mcol1, mcol2, mcol3 = st.columns(3)
-    mcol1.metric("Distancia total", f"{dist_total:.1f} km")
-    mcol2.metric("Velocidad media", f"{avg_speed:.0f} km/h")
-    mcol3.metric("Duración", total_time)
-
-    coords_json = json.dumps([{"lat": r["latitude"], "lng": r["longitude"], "spd": r["speed_kmh"], "ts": str(r["recorded_at"])} for _, r in df.iterrows()])
+    coords_json = json.dumps([{"lat": r["latitude"], "lng": r["longitude"], "spd": r["speed_kmh"], "hdg": r["heading_deg"], "evt": r["event_type"], "ts": str(r["recorded_at"])} for _, r in df.iterrows()])
 
     map_html = f"""
     <!DOCTYPE html>
@@ -113,8 +81,16 @@ def show():
     <head>
         <meta charset="utf-8">
         <style>
-            body {{ margin:0; padding:0; }}
-            #map {{ width:100%; height:550px; }}
+            body {{ margin:0; padding:0; background:#0f172a; }}
+            #map {{ width:100%; height:440px; }}
+            .controls {{ padding:10px 12px 6px; background:#0f172a; }}
+            .slider-container {{ display:flex; align-items:center; gap:12px; }}
+            .slider-container input {{ flex:1; accent-color:#00d4ff; }}
+            .slider-container span {{ color:#94a3b8; font-size:13px; font-family:'Segoe UI',sans-serif; min-width:80px; }}
+            .metrics {{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:0 12px 8px; }}
+            .metric {{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:6px 10px; text-align:center; }}
+            .metric .val {{ color:white; font-size:18px; font-weight:700; font-family:'Segoe UI',sans-serif; }}
+            .metric .lbl {{ color:#64748b; font-size:10px; font-family:'Segoe UI',sans-serif; }}
             .info-box {{
                 background: rgba(7,11,36,0.92); color: white;
                 padding: 10px 16px; border-radius: 8px;
@@ -128,20 +104,64 @@ def show():
     </head>
     <body>
         <div id="map"></div>
+        <div class="controls">
+            <div class="slider-container">
+                <span id="lblIndex">1 / 1</span>
+                <input type="range" id="timeline" min="0" max="0" value="0" oninput="onSlider(this.value)">
+                <span id="lblTime">-</span>
+            </div>
+        </div>
+        <div class="metrics" id="metrics">
+            <div class="metric"><div class="val" id="mSpeed">-</div><div class="lbl">Velocidad</div></div>
+            <div class="metric"><div class="val" id="mHeading">-</div><div class="lbl">Dirección</div></div>
+            <div class="metric"><div class="val" id="mEvent">-</div><div class="lbl">Evento</div></div>
+            <div class="metric"><div class="val" id="mTime">-</div><div class="lbl">Hora</div></div>
+        </div>
         <script>
-        var telemetryData = {coords_json};
-        var currentIndex = {idx};
+        var data = {coords_json};
+        var markerCurrent = null, infoWindow = null, map = null;
+        var allMarkers = [];
+
+        function updateView(idx) {{
+            if (!data || data.length === 0) return;
+            var p = data[idx];
+            document.getElementById('lblIndex').textContent = (idx+1) + ' / ' + data.length;
+            document.getElementById('lblTime').textContent = p.ts ? p.ts.slice(-8) : '-';
+            document.getElementById('mSpeed').textContent = p.spd.toFixed(0) + ' km/h';
+            document.getElementById('mHeading').textContent = (p.hdg || 0).toFixed(0) + '°';
+            document.getElementById('mEvent').textContent = p.evt ? p.evt.replace(/_/g,' ') : 'gps fix';
+            document.getElementById('mTime').textContent = p.ts ? p.ts.slice(-8) : '-';
+
+            if (markerCurrent) markerCurrent.setMap(null);
+            if (infoWindow) infoWindow.close();
+            markerCurrent = new google.maps.Marker({{
+                position: {{ lat: p.lat, lng: p.lng }}, map: map,
+                icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#a855f7", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }}
+            }});
+            infoWindow = new google.maps.InfoWindow({{
+                content: '<div class="info-box"><strong>📍 Punto ' + (idx+1) + ' / ' + data.length + '</strong><br>🚗 Velocidad: <strong>' + p.spd + ' km/h</strong><br>🕐 ' + (p.ts || '-') + '</div>',
+                position: {{ lat: p.lat, lng: p.lng }}
+            }});
+            infoWindow.open(map);
+        }}
+
+        function onSlider(val) {{
+            var idx = parseInt(val);
+            updateView(idx);
+        }}
+
         function initMap() {{
             if (typeof google === 'undefined' || !google.maps) {{
-                document.getElementById('map').innerHTML = '<div style="padding:40px;text-align:center;color:#f87171;font-family:sans-serif;"><h3>❌ Google Maps no pudo cargarse</h3><p>Verifica la API Key en .env</p></div>';
+                document.getElementById('map').innerHTML = '<div style="padding:40px;text-align:center;color:#f87171;font-family:sans-serif;"><h3>❌ Google Maps no pudo cargarse</h3><p>Verifica la API Key</p></div>';
                 return;
             }}
-            var data = telemetryData;
-            var idx = currentIndex;
             if (!data || data.length === 0) return;
 
+            document.getElementById('timeline').max = data.length - 1;
+            document.getElementById('lblIndex').textContent = '1 / ' + data.length;
+
             var bounds = new google.maps.LatLngBounds();
-            var map = new google.maps.Map(document.getElementById('map'), {{
+            map = new google.maps.Map(document.getElementById('map'), {{
                 mapTypeId: 'roadmap',
                 styles: [
                     {{ "elementType": "geometry", "stylers": [{{ "color": "#242f3e" }}] }},
@@ -156,42 +176,27 @@ def show():
             data.forEach(function(p, i) {{
                 var size = Math.max(3, Math.min(8, p.spd / 15));
                 var color = p.spd > 50 ? '#00d4ff' : (p.spd > 10 ? '#fbbf24' : '#ef4444');
-                new google.maps.Marker({{
-                    position: {{ lat: p.lat, lng: p.lng }},
-                    map: map,
+                allMarkers.push(new google.maps.Marker({{
+                    position: {{ lat: p.lat, lng: p.lng }}, map: map,
                     icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: size, fillColor: color, fillOpacity: 0.7, strokeColor: '#ffffff', strokeWeight: 1 }},
                     title: (i+1) + '. ' + p.spd + ' km/h'
-                }});
+                }}));
+                bounds.extend(new google.maps.LatLng(p.lat, p.lng));
             }});
 
             new google.maps.Marker({{
-                position: {{ lat: data[idx].lat, lng: data[idx].lng }},
-                map: map,
-                title: 'Vel: ' + data[idx].spd + ' km/h',
-                icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#a855f7", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }}
-            }});
-
-            var info = new google.maps.InfoWindow({{
-                content: '<div class="info-box"><strong>📍 Punto ' + (idx + 1) + ' / ' + data.length + '</strong><br>🚗 Velocidad: <strong>' + data[idx].spd + ' km/h</strong><br>🕐 ' + (data[idx].ts || '-') + '</div>',
-                position: {{ lat: data[idx].lat, lng: data[idx].lng }}
-            }});
-            info.open(map);
-
-            new google.maps.Marker({{
-                position: {{ lat: data[0].lat, lng: data[0].lng }},
-                map: map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#34d399", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
-                title: "Inicio"
+                position: {{ lat: data[0].lat, lng: data[0].lng }}, map: map,
+                icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#34d399", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }}, title: "Inicio"
             }});
             if (data.length > 1) {{
                 new google.maps.Marker({{
-                    position: {{ lat: data[data.length-1].lat, lng: data[data.length-1].lng }},
-                    map: map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#f87171", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
-                    title: "Fin"
+                    position: {{ lat: data[data.length-1].lat, lng: data[data.length-1].lng }}, map: map,
+                    icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#f87171", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }}, title: "Fin"
                 }});
             }}
 
-            data.forEach(function(p) {{ bounds.extend(new google.maps.LatLng(p.lat, p.lng)); }});
             map.fitBounds(bounds);
+            updateView(0);
 
             var directionsService = new google.maps.DirectionsService();
             var directionsRenderer = new google.maps.DirectionsRenderer({{
@@ -205,21 +210,15 @@ def show():
             }}, function(result, status) {{
                 if (status === google.maps.DirectionsStatus.OK) {{
                     directionsRenderer.setDirections(result);
-                    var leg = document.createElement('div');
-                    leg.innerHTML = '<div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;border-left:3px solid #00d4ff;">🛣️ Ruta por carretera</div>';
-                    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg);
                 }}
             }});
-            var leg2 = document.createElement('div');
-            leg2.innerHTML = '<div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;margin-top:4px;border-left:3px solid #00d4ff;">⚪ Balizas (tamaño = velocidad)</div>';
-            map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg2);
         }}
         </script>
         <script src="https://maps.googleapis.com/maps/api/js?key={API_KEY}&callback=initMap&loading=async" async defer></script>
     </body>
     </html>
     """
-    components.html(map_html, height=570)
+    components.html(map_html, height=580)
 
     with st.expander("📊 Ver tabla de balizas"):
         st.dataframe(df, use_container_width=True)
