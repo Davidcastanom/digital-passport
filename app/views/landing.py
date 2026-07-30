@@ -1,6 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
+IMG_FONDO = "https://res.cloudinary.com/dfn5g9ve3/image/upload/v1785366977/fondo_biruor.png"
+IMG_LOGO = "https://res.cloudinary.com/dfn5g9ve3/image/upload/v1785366976/logo_2_ne0zk5.png"
+
 MODULES = [
     ("01", "🆔", "Identidad Digital", "Perfil maestro del usuario: email, teléfono E.164, ubicación base de ciudad y configuración regional BCP47.", "user_identity · user_geolocation · user_culture_language"),
     ("02", "📦", "Logística Global", "Órdenes de comercio exterior con códigos HS, Incoterms y unidades UN/CEFACT. Trazabilidad producto por producto.", "trade_supply_chain · industry_measurements"),
@@ -34,18 +37,10 @@ def show():
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         * { font-family: 'Inter', sans-serif !important; }
-        .stApp { background: #070b24 !important; }
-        .main .block-container { padding: 0.2rem 0.5rem !important; max-width: 100% !important; }
+        .main .block-container { padding: 0 !important; max-width: 100% !important; }
         header, footer, #MainMenu, .stDeployButton { display: none !important; }
         section[data-testid="stSidebar"] { display: none !important; }
-        .stButton > button {
-            background: linear-gradient(135deg, #00d4ff, #7c3aed) !important;
-            color: white !important; border: none !important; font-weight: 700 !important;
-            height: 60px !important; border-radius: 100px !important; font-size: 1.2rem !important;
-            box-shadow: 0 8px 40px rgba(0,212,255,0.35), 0 0 80px rgba(124,58,237,0.15) !important;
-            letter-spacing: 2px !important;
-        }
-        .stButton > button:hover { transform: scale(1.02) !important; box-shadow: 0 12px 60px rgba(0,212,255,0.5), 0 0 100px rgba(124,58,237,0.25) !important; }
+        iframe[title="streamlit-iframe-component"] { border: none !important; }
         ::-webkit-scrollbar { display: none; }
     </style>
     """, unsafe_allow_html=True)
@@ -67,14 +62,19 @@ def show():
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}}
-body{{background:#070b24;color:white;padding:8px 16px;}}
-.header{{display:flex;align-items:center;gap:14px;margin-bottom:6px;}}
-.header span{{color:#00d4ff;font-weight:700;font-size:14px;letter-spacing:4px;}}
+body{{background:#070b24;color:white;overflow-x:hidden;}}
+.bg{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:0;}}
+.bg img{{width:100%;height:100%;object-fit:cover;}}
+.overlay{{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;background:linear-gradient(180deg,rgba(7,11,36,0.92) 0%,rgba(7,11,36,0.6) 40%,rgba(7,11,36,0.88) 100%);}}
+.content{{position:relative;z-index:2;padding:12px 20px 20px;max-width:1200px;margin:0 auto;}}
+.header{{display:flex;align-items:center;gap:14px;margin-bottom:4px;}}
+.header img{{height:48px;filter:drop-shadow(0 0 20px rgba(0,212,255,0.2));}}
+.header span{{color:#00d4ff;font-weight:700;font-size:14px;letter-spacing:4px;text-shadow:0 0 20px rgba(0,212,255,0.3);}}
 .hero{{text-align:center;margin:6px auto 10px;max-width:750px;}}
-.hero .tag{{color:#00d4ff;font-weight:600;font-size:13px;letter-spacing:4px;text-transform:uppercase;margin-bottom:2px;}}
-.hero h1{{color:white;font-weight:900;font-size:2.8rem;line-height:1.05;}}
+.hero .tag{{color:#00d4ff;font-weight:600;font-size:13px;letter-spacing:4px;text-transform:uppercase;margin-bottom:2px;text-shadow:0 0 30px rgba(0,212,255,0.2);}}
+.hero h1{{color:white;font-weight:900;font-size:2.8rem;line-height:1.05;text-shadow:0 2px 40px rgba(0,0,0,0.3);}}
 .hero h2{{background:linear-gradient(135deg,#00d4ff,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900;font-size:1.5rem;margin-bottom:4px;}}
-.hero p{{color:#cbd5e1;font-size:15px;line-height:1.5;}}
+.hero p{{color:#cbd5e1;font-size:15px;line-height:1.5;text-shadow:0 1px 20px rgba(0,0,0,0.2);}}
 .section-label{{display:flex;align-items:center;gap:8px;margin-bottom:6px;}}
 .section-label span{{color:#64748b;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;}}
 .section-label hr{{flex:1;height:1px;border:none;background:linear-gradient(90deg,rgba(255,255,255,0.08),transparent);}}
@@ -93,15 +93,18 @@ body{{background:#070b24;color:white;padding:8px 16px;}}
 .sec-icon{{font-size:22px;margin-bottom:2px;}}
 .sec-title{{color:white;font-size:13px;font-weight:700;}}
 .sec-desc{{color:#94a3b8;font-size:11px;line-height:1.3;}}
-.summary{{text-align:center;margin:0 auto 6px;max-width:700px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:8px 16px;}}
+.summary{{text-align:center;margin:0 auto 8px;max-width:700px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:8px 16px;}}
 .summary p{{color:#94a3b8;font-size:12px;line-height:1.4;margin:0;}}
 .summary .hl{{color:#00d4ff;}}
-.footer{{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;}}
+.footer{{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;}}
 .footer span{{color:#475569;font-size:11px;}}
 .footer .d{{color:#00d4ff;}}
 .footer .p{{color:#a855f7;}}
 
-/* Modal overlay */
+.btn-wrap{{text-align:center;margin:0 auto 0;}}
+.btn-access{{background:linear-gradient(135deg,#00d4ff,#7c3aed);color:white;border:none;font-weight:800;padding:18px 48px;border-radius:60px;font-size:18px;letter-spacing:2px;box-shadow:0 8px 40px rgba(0,212,255,0.35),0 0 80px rgba(124,58,237,0.15);cursor:pointer;transition:all 0.2s;}}
+.btn-access:hover{{transform:scale(1.03);box-shadow:0 12px 60px rgba(0,212,255,0.5),0 0 100px rgba(124,58,237,0.25);}}
+
 .modal{{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999;justify-content:center;align-items:center;}}
 .modal-box{{background:#0f172a;border:1px solid rgba(0,212,255,0.2);border-radius:20px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 20px 80px rgba(0,0,0,0.6);position:relative;}}
 .modal-close{{position:absolute;top:12px;right:16px;color:#64748b;font-size:24px;cursor:pointer;background:none;border:none;}}
@@ -119,8 +122,11 @@ body{{background:#070b24;color:white;padding:8px 16px;}}
 </style>
 </head>
 <body>
+<div class="bg"><img src="{IMG_FONDO}"></div>
+<div class="overlay"></div>
+<div class="content">
+<div class="header"><img src="{IMG_LOGO}"><span>TRADETECH SOLUTIONS</span></div>
 <div class="hero">
-<div class="header"><span>TRADETECH SOLUTIONS</span></div>
 <div class="tag">Sistema de Identidad Digital y Logística Internacional</div>
 <h1>Pasaporte Digital</h1>
 <h2>de Comercio Exterior</h2>
@@ -131,10 +137,12 @@ body{{background:#070b24;color:white;padding:8px 16px;}}
 <div class="section-label"><span>Sectores Objetivo</span><hr></div>
 <div class="grid-sec">{sectors_html}</div>
 <div class="summary"><p><strong>En resumen:</strong> Cualquier sistema &mdash;ERP, FinTech, aduana, universidad&mdash; puede consultar el perfil completo de un usuario <strong class="hl">(identidad, logística, finanzas, ciencia, telemetría)</strong> en milisegundos desde una sola plataforma.</p></div>
+<div class="btn-wrap"><button class="btn-access" onclick="enter()">🌐  ACCEDER AL SISTEMA</button></div>
 <div class="footer">
 <span><span class="d">&#10022;</span> ISO 639-1 &middot; BCP47 &middot; E.164</span>
 <span><span class="p">&#10022;</span> HS Code &middot; Incoterms 2020 &middot; ISCO-08</span>
 <span><span class="d">&#10022;</span> UN/CEFACT &middot; SWIFT &middot; IBAN &middot; CIIU</span>
+</div>
 </div>
 
 <div id="modal" class="modal" onclick="closeModal(event)">
@@ -172,12 +180,21 @@ document.addEventListener('keydown', function(e) {{
     document.body.style.overflow = '';
   }}
 }});
+function enter() {{
+  try {{
+    window.parent.location.href = window.parent.location.href.split('?')[0] + '?enter=1';
+  }} catch(e) {{
+    window.location.href = window.location.href.split('?')[0] + '?enter=1';
+  }}
+}}
 </script>
 </body>
 </html>"""
 
-    components.html(html, height=780, scrolling=True)
+    components.html(html, height=860, scrolling=False)
 
-    if st.button("🌐  ACCEDER AL SISTEMA", use_container_width=True, type="primary"):
+    qp = st.query_params
+    if "enter" in qp and qp["enter"] == "1":
         st.session_state.landing = False
+        st.query_params.clear()
         st.rerun()
