@@ -191,7 +191,7 @@ function enter() {{
 </body>
 </html>"""
 
-    components.html(html, height=860, scrolling=False)
+    components.html(html, height=860, scrolling=False, sandbox="allow-scripts allow-same-origin allow-top-navigation")
 
     qp = st.query_params
     if "enter" in qp and qp["enter"] == "1":
