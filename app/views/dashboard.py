@@ -3,7 +3,7 @@ import pandas as pd
 from app.database.connection import get_conn, get_tables
 
 def show():
-    st.title("Telemetriamaps para Comercio Exterior")
+    st.title("Pasaporte Digital para Comercio Exterior")
     st.markdown("Sistema de registro unificado para importación y exportación con estándares internacionales.")
     conn = get_conn()
     c = conn.cursor()

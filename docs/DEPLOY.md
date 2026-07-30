@@ -10,13 +10,13 @@ Gratuito, HTTPS incluido, despliegue automático desde GitHub.
 # En la carpeta del proyecto:
 git init
 git add .
-git commit -m "MVP Telemetriamaps"
+git commit -m "MVP Pasaporte Digital"
 ```
 
 Crear un repo en https://github.com/new (público o privado)
 
 ```bash
-git remote add origin https://github.com/tu-usuario/telemetriamaps.git
+git remote add origin https://github.com/Davidcastanom/digital-passport.git
 git branch -M main
 git push -u origin main
 ```
@@ -30,7 +30,7 @@ git push -u origin main
 1. Ir a https://streamlit.io/cloud
 2. Iniciar sesión con tu cuenta de GitHub
 3. Click **"New app"**
-4. Elegir: `tu-usuario/telemetriamaps`
+4. Elegir: `Davidcastanom/digital-passport`
 5. Branch: `main`
 6. Main file: `app/main.py`
 7. Click **"Deploy"**
@@ -86,7 +86,7 @@ Streamlit Cloud detecta el cambio y redepliega solo.
 ## URL final
 
 ```
-https://tu-usuario-telemetriamaps.streamlit.app
+https://digital-passport.streamlit.app
 ```
 
 Comparte ese enlace con quien quieras.

@@ -6,7 +6,7 @@ import streamlit as st
 from app.utils.config import get_api_key
 from app.database.connection import get_conn, get_tables
 
-st.set_page_config(page_title="Telemetriamaps - Comercio Exterior", layout="wide")
+st.set_page_config(page_title="Pasaporte Digital - Comercio Exterior", layout="wide")
 
 if "db_path" not in st.session_state:
     st.session_state.db_path = ""
@@ -45,4 +45,4 @@ module = sys.modules[module_path]
 module.show()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**BD:** SQLite · Telemetriamaps v1.0")
+st.sidebar.markdown("**BD:** SQLite · Pasaporte Digital v1.0")

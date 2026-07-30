@@ -38,7 +38,7 @@ def show():
         </div>
         <div style="text-align:center;margin:0.8rem auto 0.8rem auto;max-width:750px;">
             <div style="color:#00d4ff;font-weight:600;font-size:0.85rem;letter-spacing:6px;text-transform:uppercase;margin-bottom:4px;text-shadow:0 0 30px rgba(0,212,255,0.2);">Sistema de Identidad Digital y Logística Internacional</div>
-            <h1 style="color:white;font-weight:900;font-size:3.5rem;margin:0;line-height:1.05;text-shadow:0 2px 40px rgba(0,0,0,0.3);">Telemetriamaps</h1>
+            <h1 style="color:white;font-weight:900;font-size:3.5rem;margin:0;line-height:1.05;text-shadow:0 2px 40px rgba(0,0,0,0.3);">Pasaporte Digital</h1>
             <h2 style="background:linear-gradient(135deg,#00d4ff,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;font-size:2rem;margin:0 0 0.5rem 0;text-shadow:none;">de Comercio Exterior</h2>
             <p style="color:#e2e8f0;font-size:1rem;line-height:1.6;margin:0;text-shadow:0 1px 20px rgba(0,0,0,0.2);">Imagínalo como el <strong style="color:white;">"documento de identidad universal"</strong> de un usuario o empresa dentro de un ecosistema digital integrado. Resuelve <strong style="color:#00d4ff;">5 grandes problemas operativos</strong> en una sola plataforma.</p>
         </div>

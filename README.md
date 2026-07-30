@@ -1,4 +1,4 @@
-# Telemetriamaps
+# Pasaporte Digital
 
 Sistema de identidad digital y logística internacional con telemetría geoespacial y Google Maps.
 
@@ -17,8 +17,8 @@ Próximamente en Streamlit Community Cloud.
 
 ```bash
 # 1. Clonar
-git clone https://github.com/tu-usuario/telemetriamaps.git
-cd telemetriamaps
+git clone https://github.com/Davidcastanom/digital-passport.git
+cd digital-passport
 
 # 2. Crear entorno virtual
 python -m venv venv
@@ -44,7 +44,7 @@ Ejecutar `dist/PasaporteDigital.exe` (versión portable, requiere antivirus exce
 ## 🏗️ Estructura del proyecto
 
 ```
-telemetriamaps/
+digital-passport/
 ├── app/
 │   ├── main.py              # Punto de entrada
 │   ├── views/               # Páginas de la app
