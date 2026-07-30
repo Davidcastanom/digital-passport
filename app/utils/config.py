@@ -20,7 +20,7 @@ def get_db_path():
     base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     candidates = [
         os.path.join(base, "Esquema Relacional Global_David.db"),
-        os.path.join(base, "data", "telemetriamaps.db"),
+        os.path.join(base, "data", "pasaporte_digital.db"),
     ]
     for p in candidates:
         if os.path.exists(p):

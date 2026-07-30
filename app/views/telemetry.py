@@ -12,6 +12,11 @@ from app.utils.helpers import haversine
 def show():
     API_KEY = get_api_key()
 
+    if "playback" not in st.session_state:
+        st.session_state.playback = False
+    if "playback_i" not in st.session_state:
+        st.session_state.playback_i = 0
+
     col_titulo, col_help = st.columns([0.92, 0.08])
     with col_titulo:
         st.title("Telemetría y Mapas en Tiempo Real")
@@ -198,7 +203,7 @@ def show():
             map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg2);
         }}
         </script>
-        <script src="https://maps.googleapis.com/maps/api/js?key={API_KEY}&callback=initMap" async defer></script>
+        <script src="https://maps.googleapis.com/maps/api/js?key={API_KEY}&callback=initMap&loading=async" async defer></script>
     </body>
     </html>
     """
@@ -208,9 +213,18 @@ def show():
         st.dataframe(df, use_container_width=True)
 
     if st.button("▶ Reproducir ruta"):
-        placeholder = st.empty()
-        for i in range(len(df)):
+        st.session_state.playback = True
+        st.session_state.playback_i = 0
+        st.rerun()
+
+    if st.session_state.playback:
+        i = st.session_state.playback_i
+        if i < len(df):
             st.session_state.tl_idx = i
-            placeholder.info(f"Punto {i+1}/{len(df)} — {df.iloc[i]['speed_kmh']:.0f} km/h")
-            st.rerun()
+            st.info(f"Punto {i+1}/{len(df)} — {df.iloc[i]['speed_kmh']:.0f} km/h")
+            st.session_state.playback_i = i + 1
             time.sleep(0.3)
+            st.rerun()
+        else:
+            st.session_state.playback = False
+            st.rerun()
