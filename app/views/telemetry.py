@@ -53,9 +53,22 @@ def show():
         st.warning("No hay usuarios registrados.")
         return
 
+    from app.utils.helpers import generate_beacons
+
     user_options = {row["email"]: row["user_id"] for _, row in users_df.iterrows()}
     email = st.selectbox("Selecciona un usuario", options=list(user_options.keys()), key="telemetry_user")
     uid = user_options[email]
+
+    col_gen, col_num = st.columns([1, 3])
+    with col_gen:
+        gen_click = st.button("🔄 Generar balizas", type="primary")
+    with col_num:
+        num_beacons = st.number_input("Cantidad", min_value=5, max_value=200, value=30, step=5, label_visibility="collapsed")
+    if gen_click:
+        conn_gen = get_conn()
+        generate_beacons(conn_gen, uid, num_beacons=int(num_beacons))
+        conn_gen.close()
+        st.rerun()
 
     conn = get_conn()
     df = pd.read_sql("""
