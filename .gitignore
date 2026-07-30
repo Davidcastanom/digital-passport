@@ -18,6 +18,7 @@ build/
 *.db-journal
 *.db-wal
 *.db-shm
+!Esquema Relacional Global_David.db
 
 # IDE
 .vscode/
