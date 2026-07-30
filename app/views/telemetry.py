@@ -69,7 +69,12 @@ def show():
         st.warning("Este usuario no tiene datos de telemetría.")
         return
 
-    idx = st.slider("Línea de tiempo", 0, len(df) - 1, len(df) - 1, key="tl_idx")
+    if st.session_state.playback:
+        idx = st.session_state.playback_i
+    else:
+        idx = st.session_state.get("tl_idx", len(df) - 1)
+    idx = st.slider("Línea de tiempo", 0, len(df) - 1, idx)
+    st.session_state.tl_idx = idx
     punto = df.iloc[idx]
 
     col1, col2, col3, col4 = st.columns(4)
@@ -220,7 +225,6 @@ def show():
     if st.session_state.playback:
         i = st.session_state.playback_i
         if i < len(df):
-            st.session_state.tl_idx = i
             st.info(f"Punto {i+1}/{len(df)} — {df.iloc[i]['speed_kmh']:.0f} km/h")
             st.session_state.playback_i = i + 1
             time.sleep(0.3)
