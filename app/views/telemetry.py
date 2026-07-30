@@ -227,7 +227,7 @@ def show():
         if i < len(df):
             st.info(f"Punto {i+1}/{len(df)} — {df.iloc[i]['speed_kmh']:.0f} km/h")
             st.session_state.playback_i = i + 1
-            time.sleep(0.3)
+            time.sleep(0.7)
             st.rerun()
         else:
             st.session_state.playback = False
