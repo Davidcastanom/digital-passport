@@ -36,5 +36,8 @@ Thumbs.db
 # PyInstaller
 *.spec
 
+# Backup
+*.bak
+
 # Logs
 *.log

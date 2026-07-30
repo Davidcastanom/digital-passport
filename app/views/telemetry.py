@@ -8,6 +8,11 @@ from app.utils.config import get_api_key
 def show():
     API_KEY = get_api_key()
 
+    if "route_history" not in st.session_state:
+        st.session_state.route_history = []
+    if "current_coords" not in st.session_state:
+        st.session_state.current_coords = []
+
     col_titulo, col_help = st.columns([0.92, 0.08])
     with col_titulo:
         st.title("Telemetría y Mapas en Tiempo Real")
@@ -56,6 +61,8 @@ def show():
     with col_num:
         num_beacons = st.number_input("Cantidad", min_value=5, max_value=200, value=30, step=5, label_visibility="collapsed")
     if gen_click:
+        if st.session_state.current_coords:
+            st.session_state.route_history.append(st.session_state.current_coords)
         conn_gen = get_conn()
         generate_beacons(conn_gen, uid, num_beacons=int(num_beacons))
         conn_gen.close()
@@ -73,7 +80,11 @@ def show():
         st.warning("Este usuario no tiene datos de telemetría.")
         return
 
-    coords_json = json.dumps([{"lat": r["latitude"], "lng": r["longitude"], "spd": r["speed_kmh"], "hdg": r["heading_deg"], "evt": r["event_type"], "ts": str(r["recorded_at"])} for _, r in df.iterrows()])
+    coords = [{"lat": r["latitude"], "lng": r["longitude"], "spd": r["speed_kmh"], "hdg": r["heading_deg"], "evt": r["event_type"], "ts": str(r["recorded_at"])} for _, r in df.iterrows()]
+    coords_json = json.dumps(coords)
+    st.session_state.current_coords = coords
+
+    history_json = json.dumps(st.session_state.route_history)
 
     map_html = f"""
     <!DOCTYPE html>
@@ -119,8 +130,41 @@ def show():
         </div>
         <script>
         var data = {coords_json};
+        var history = {history_json};
         var markerCurrent = null, infoWindow = null, map = null;
         var allMarkers = [];
+        var routeRenderers = [];
+
+        function addRoadRoute(waypoints, color, opacity, weight) {{
+            if (waypoints.length < 2) return;
+            var origin = waypoints[0];
+            var dest = waypoints[waypoints.length - 1];
+            var mids = waypoints.slice(1, -1).map(function(p) {{
+                return {{ location: new google.maps.LatLng(p.lat, p.lng), stopover: false }};
+            }});
+            var renderer = new google.maps.DirectionsRenderer({{
+                map: map, preserveViewport: true, suppressMarkers: true,
+                polylineOptions: {{ strokeColor: color, strokeOpacity: opacity, strokeWeight: weight }}
+            }});
+            routeRenderers.push(renderer);
+            new google.maps.DirectionsService().route({{
+                origin: origin, destination: dest, waypoints: mids,
+                travelMode: google.maps.TravelMode.DRIVING
+            }}, function(result, status) {{
+                if (status === google.maps.DirectionsStatus.OK) {{
+                    renderer.setDirections(result);
+                }}
+            }});
+        }}
+
+        function addPolyline(pts, color, opacity, weight) {{
+            if (pts.length < 2) return;
+            var path = pts.map(function(p) {{ return {{ lat: p.lat, lng: p.lng }}; }});
+            new google.maps.Polyline({{
+                path: path, map: map,
+                strokeColor: color, strokeOpacity: opacity, strokeWeight: weight
+            }});
+        }}
 
         function updateView(idx) {{
             if (!data || data.length === 0) return;
@@ -198,20 +242,15 @@ def show():
             map.fitBounds(bounds);
             updateView(0);
 
-            var directionsService = new google.maps.DirectionsService();
-            var directionsRenderer = new google.maps.DirectionsRenderer({{
-                map: map, polylineOptions: {{ strokeColor: "#00d4ff", strokeOpacity: 0.9, strokeWeight: 4 }},
-                suppressMarkers: true, preserveViewport: true
+            // Historical routes — dim polylines (no Directions API to save quota)
+            var numHistory = history.length;
+            history.forEach(function(route, i) {{
+                var opacity = 0.15 + (i / numHistory) * 0.25;
+                addPolyline(route, '#00d4ff', opacity, 2);
             }});
-            directionsService.route({{
-                origin: {{ lat: data[0].lat, lng: data[0].lng }},
-                destination: {{ lat: data[data.length-1].lat, lng: data[data.length-1].lng }},
-                travelMode: google.maps.TravelMode.DRIVING
-            }}, function(result, status) {{
-                if (status === google.maps.DirectionsStatus.OK) {{
-                    directionsRenderer.setDirections(result);
-                }}
-            }});
+
+            // Current route — road route via Directions API with waypoints
+            addRoadRoute(data, '#00d4ff', 1.0, 4);
         }}
         </script>
         <script src="https://maps.googleapis.com/maps/api/js?key={API_KEY}&callback=initMap&loading=async" async defer></script>
