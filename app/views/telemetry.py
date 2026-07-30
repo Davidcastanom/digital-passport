@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 import math
-import time
 import streamlit.components.v1 as components
 from datetime import datetime
 from app.database.connection import get_conn
@@ -11,11 +10,6 @@ from app.utils.helpers import haversine
 
 def show():
     API_KEY = get_api_key()
-
-    if "playback" not in st.session_state:
-        st.session_state.playback = False
-    if "playback_i" not in st.session_state:
-        st.session_state.playback_i = 0
 
     col_titulo, col_help = st.columns([0.92, 0.08])
     with col_titulo:
@@ -82,10 +76,7 @@ def show():
         st.warning("Este usuario no tiene datos de telemetría.")
         return
 
-    if st.session_state.playback:
-        idx = st.session_state.playback_i
-    else:
-        idx = st.session_state.get("tl_idx", len(df) - 1)
+    idx = st.session_state.get("tl_idx", len(df) - 1)
     if idx >= len(df):
         idx = len(df) - 1
     idx = st.slider("Línea de tiempo", 0, len(df) - 1, idx)
@@ -271,19 +262,3 @@ def show():
 
     with st.expander("📊 Ver tabla de balizas"):
         st.dataframe(df, use_container_width=True)
-
-    if st.button("▶ Reproducir ruta (Streamlit)"):
-        st.session_state.playback = True
-        st.session_state.playback_i = 0
-        st.rerun()
-
-    if st.session_state.playback:
-        i = st.session_state.playback_i
-        if i < len(df):
-            st.info(f"Punto {i+1}/{len(df)} — {df.iloc[i]['speed_kmh']:.0f} km/h")
-            st.session_state.playback_i = i + 1
-            time.sleep(0.7)
-            st.rerun()
-        else:
-            st.session_state.playback = False
-            st.rerun()
