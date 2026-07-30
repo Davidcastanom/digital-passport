@@ -41,6 +41,14 @@ def show():
         header, footer, #MainMenu, .stDeployButton { display: none !important; }
         section[data-testid="stSidebar"] { display: none !important; }
         iframe[title="streamlit-iframe-component"] { border: none !important; }
+        .stButton > button {
+            background: linear-gradient(135deg, #00d4ff, #7c3aed) !important;
+            color: white !important; border: none !important; font-weight: 800 !important;
+            height: 64px !important; border-radius: 60px !important; font-size: 1.1rem !important;
+            letter-spacing: 2px !important;
+            box-shadow: 0 8px 40px rgba(0,212,255,0.35), 0 0 80px rgba(124,58,237,0.15) !important;
+        }
+        .stButton > button:hover { transform: scale(1.02) !important; box-shadow: 0 12px 60px rgba(0,212,255,0.5), 0 0 100px rgba(124,58,237,0.25) !important; }
         ::-webkit-scrollbar { display: none; }
     </style>
     """, unsafe_allow_html=True)
@@ -101,10 +109,6 @@ body{{background:#070b24;color:white;overflow-x:hidden;}}
 .footer .d{{color:#00d4ff;}}
 .footer .p{{color:#a855f7;}}
 
-.btn-wrap{{text-align:center;margin:0 auto 0;}}
-.btn-access{{background:linear-gradient(135deg,#00d4ff,#7c3aed);color:white;border:none;font-weight:800;padding:18px 48px;border-radius:60px;font-size:18px;letter-spacing:2px;box-shadow:0 8px 40px rgba(0,212,255,0.35),0 0 80px rgba(124,58,237,0.15);cursor:pointer;transition:all 0.2s;}}
-.btn-access:hover{{transform:scale(1.03);box-shadow:0 12px 60px rgba(0,212,255,0.5),0 0 100px rgba(124,58,237,0.25);}}
-
 .modal{{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:999;justify-content:center;align-items:center;}}
 .modal-box{{background:#0f172a;border:1px solid rgba(0,212,255,0.2);border-radius:20px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 20px 80px rgba(0,0,0,0.6);position:relative;}}
 .modal-close{{position:absolute;top:12px;right:16px;color:#64748b;font-size:24px;cursor:pointer;background:none;border:none;}}
@@ -137,7 +141,6 @@ body{{background:#070b24;color:white;overflow-x:hidden;}}
 <div class="section-label"><span>Sectores Objetivo</span><hr></div>
 <div class="grid-sec">{sectors_html}</div>
 <div class="summary"><p><strong>En resumen:</strong> Cualquier sistema &mdash;ERP, FinTech, aduana, universidad&mdash; puede consultar el perfil completo de un usuario <strong class="hl">(identidad, logística, finanzas, ciencia, telemetría)</strong> en milisegundos desde una sola plataforma.</p></div>
-<div class="btn-wrap"><button class="btn-access" onclick="enter()">🌐  ACCEDER AL SISTEMA</button></div>
 <div class="footer">
 <span><span class="d">&#10022;</span> ISO 639-1 &middot; BCP47 &middot; E.164</span>
 <span><span class="p">&#10022;</span> HS Code &middot; Incoterms 2020 &middot; ISCO-08</span>
@@ -180,21 +183,14 @@ document.addEventListener('keydown', function(e) {{
     document.body.style.overflow = '';
   }}
 }});
-function enter() {{
-  try {{
-    window.parent.location.href = window.parent.location.href.split('?')[0] + '?enter=1';
-  }} catch(e) {{
-    window.location.href = window.location.href.split('?')[0] + '?enter=1';
-  }}
-}}
 </script>
 </body>
 </html>"""
 
-    components.html(html, height=860, scrolling=False, sandbox="allow-scripts allow-same-origin allow-top-navigation")
+    components.html(html, height=900, scrolling=False)
 
-    qp = st.query_params
-    if "enter" in qp and qp["enter"] == "1":
+    st.markdown('<div style="max-width:400px;margin:10px auto 0;">', unsafe_allow_html=True)
+    if st.button("🌐  ACCEDER AL SISTEMA", use_container_width=True, type="primary"):
         st.session_state.landing = False
-        st.query_params.clear()
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
