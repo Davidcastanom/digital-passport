@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import math
+import time
 import streamlit.components.v1 as components
 from datetime import datetime
 from app.database.connection import get_conn
@@ -123,12 +124,6 @@ def show():
                 max-width: 280px;
             }}
             .info-box strong {{ color: #00d4ff; }}
-            .play-btn {{
-                background: rgba(7,11,36,0.9); color: #00d4ff; border: 1px solid #00d4ff;
-                padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 700;
-                cursor: pointer; font-family: 'Segoe UI', sans-serif;
-            }}
-            .play-btn:hover {{ background: rgba(0,212,255,0.15); }}
         </style>
     </head>
     <body>
@@ -136,51 +131,6 @@ def show():
         <script>
         var telemetryData = {coords_json};
         var currentIndex = {idx};
-        var playTimer = null;
-        var isPlaying = false;
-
-        function updateMap(idx) {{
-            var data = telemetryData;
-            if (!data || data.length === 0) return;
-            document.getElementById('current-point').textContent = (idx + 1) + ' / ' + data.length;
-            document.getElementById('current-speed').textContent = data[idx].spd.toFixed(0) + ' km/h';
-            document.getElementById('current-time').textContent = data[idx].ts || '-';
-            if (window.currentMarker) window.currentMarker.setMap(null);
-            if (window.currentInfo) window.currentInfo.close();
-            window.currentMarker = new google.maps.Marker({{
-                position: {{ lat: data[idx].lat, lng: data[idx].lng }},
-                map: window.map,
-                icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#a855f7", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }}
-            }});
-            window.currentInfo = new google.maps.InfoWindow({{
-                content: '<div class="info-box"><strong>📍 Punto ' + (idx + 1) + ' / ' + data.length + '</strong><br>🚗 Velocidad: <strong>' + data[idx].spd + ' km/h</strong><br>🕐 ' + (data[idx].ts || '-') + '</div>',
-                position: {{ lat: data[idx].lat, lng: data[idx].lng }}
-            }});
-            window.currentInfo.open(window.map);
-        }}
-
-        function togglePlay() {{
-            if (isPlaying) {{
-                clearInterval(playTimer);
-                isPlaying = false;
-                document.getElementById('playBtn').textContent = '▶ Reproducir';
-                return;
-            }}
-            isPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸ Pausar';
-            playTimer = setInterval(function() {{
-                var idx = currentIndex + 1;
-                if (idx >= telemetryData.length) {{
-                    clearInterval(playTimer);
-                    isPlaying = false;
-                    document.getElementById('playBtn').textContent = '▶ Reproducir';
-                    return;
-                }}
-                currentIndex = idx;
-                updateMap(idx);
-            }}, 700);
-        }}
-
         function initMap() {{
             if (typeof google === 'undefined' || !google.maps) {{
                 document.getElementById('map').innerHTML = '<div style="padding:40px;text-align:center;color:#f87171;font-family:sans-serif;"><h3>❌ Google Maps no pudo cargarse</h3><p>Verifica la API Key en .env</p></div>';
@@ -191,7 +141,7 @@ def show():
             if (!data || data.length === 0) return;
 
             var bounds = new google.maps.LatLngBounds();
-            window.map = new google.maps.Map(document.getElementById('map'), {{
+            var map = new google.maps.Map(document.getElementById('map'), {{
                 mapTypeId: 'roadmap',
                 styles: [
                     {{ "elementType": "geometry", "stylers": [{{ "color": "#242f3e" }}] }},
@@ -208,33 +158,44 @@ def show():
                 var color = p.spd > 50 ? '#00d4ff' : (p.spd > 10 ? '#fbbf24' : '#ef4444');
                 new google.maps.Marker({{
                     position: {{ lat: p.lat, lng: p.lng }},
-                    map: window.map,
+                    map: map,
                     icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: size, fillColor: color, fillOpacity: 0.7, strokeColor: '#ffffff', strokeWeight: 1 }},
                     title: (i+1) + '. ' + p.spd + ' km/h'
                 }});
             }});
 
-            updateMap(idx);
+            new google.maps.Marker({{
+                position: {{ lat: data[idx].lat, lng: data[idx].lng }},
+                map: map,
+                title: 'Vel: ' + data[idx].spd + ' km/h',
+                icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#a855f7", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 }}
+            }});
+
+            var info = new google.maps.InfoWindow({{
+                content: '<div class="info-box"><strong>📍 Punto ' + (idx + 1) + ' / ' + data.length + '</strong><br>🚗 Velocidad: <strong>' + data[idx].spd + ' km/h</strong><br>🕐 ' + (data[idx].ts || '-') + '</div>',
+                position: {{ lat: data[idx].lat, lng: data[idx].lng }}
+            }});
+            info.open(map);
 
             new google.maps.Marker({{
                 position: {{ lat: data[0].lat, lng: data[0].lng }},
-                map: window.map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#34d399", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
+                map: map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#34d399", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
                 title: "Inicio"
             }});
             if (data.length > 1) {{
                 new google.maps.Marker({{
                     position: {{ lat: data[data.length-1].lat, lng: data[data.length-1].lng }},
-                    map: window.map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#f87171", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
+                    map: map, icon: {{ path: google.maps.SymbolPath.CIRCLE, scale: 7, fillColor: "#f87171", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 }},
                     title: "Fin"
                 }});
             }}
 
             data.forEach(function(p) {{ bounds.extend(new google.maps.LatLng(p.lat, p.lng)); }});
-            window.map.fitBounds(bounds);
+            map.fitBounds(bounds);
 
             var directionsService = new google.maps.DirectionsService();
             var directionsRenderer = new google.maps.DirectionsRenderer({{
-                map: window.map, polylineOptions: {{ strokeColor: "#00d4ff", strokeOpacity: 0.9, strokeWeight: 4 }},
+                map: map, polylineOptions: {{ strokeColor: "#00d4ff", strokeOpacity: 0.9, strokeWeight: 4 }},
                 suppressMarkers: true, preserveViewport: true
             }});
             directionsService.route({{
@@ -246,12 +207,12 @@ def show():
                     directionsRenderer.setDirections(result);
                     var leg = document.createElement('div');
                     leg.innerHTML = '<div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;border-left:3px solid #00d4ff;">🛣️ Ruta por carretera</div>';
-                    window.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg);
+                    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg);
                 }}
             }});
             var leg2 = document.createElement('div');
-            leg2.innerHTML = '<div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;margin-top:4px;border-left:3px solid #00d4ff;">⚪ Balizas (tamaño = velocidad)</div><div style="margin-top:6px;"><button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Reproducir</button></div><div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;margin-top:4px;border-left:3px solid #00d4ff;">📍 Punto <span id="current-point">' + (idx+1) + ' / ' + data.length + '</span> · 🚗 <span id="current-speed">' + data[idx].spd.toFixed(0) + ' km/h</span> · 🕐 <span id="current-time">' + (data[idx].ts || '-') + '</span></div>';
-            window.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg2);
+            leg2.innerHTML = '<div style="background:rgba(7,11,36,0.9);color:white;padding:6px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;margin-top:4px;border-left:3px solid #00d4ff;">⚪ Balizas (tamaño = velocidad)</div>';
+            map.controls[google.maps.ControlPosition.TOP_RIGHT].push(leg2);
         }}
         </script>
         <script src="https://maps.googleapis.com/maps/api/js?key={API_KEY}&callback=initMap&loading=async" async defer></script>
