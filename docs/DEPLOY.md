@@ -86,7 +86,9 @@ Streamlit Cloud detecta el cambio y redepliega solo.
 ## URL final
 
 ```
-https://digital-passport.streamlit.app
+https://digital-passport-ujnzphfeblnhnw3qgw4enp.streamlit.app
 ```
 
 Comparte ese enlace con quien quieras.
+
+> 💡 **Subdominio corto (opcional):** para tener `digital-passport.streamlit.app`, ve a **App → Settings → General → Custom subdomain** y escribe `digital-passport` (si está disponible). Si no se configura, la URL corta devuelve 404 y la app solo responde en la URL automática de arriba.
