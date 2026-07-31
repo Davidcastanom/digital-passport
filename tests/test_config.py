@@ -38,11 +38,15 @@ class TestDbPath:
         config._env_loaded = False
         monkeypatch.setattr(config, "_get_project_root", lambda: str(tmp_path))
         monkeypatch.setenv("MAPS_API_KEY", "existing")
-        config._ensure_env()
-        assert os.environ["MAPS_API_KEY"] == "existing"
-        assert os.environ.get("MAPS_API_KEY2") == "secret2"
-        assert os.environ.get("DB_PATH") == "/tmp/x.db"
-        monkeypatch.delenv("MAPS_API_KEY2", raising=False)
+        try:
+            config._ensure_env()
+            assert os.environ["MAPS_API_KEY"] == "existing"
+            assert os.environ.get("MAPS_API_KEY2") == "secret2"
+            assert os.environ.get("DB_PATH") == "/tmp/x.db"
+        finally:
+            config._env_loaded = True
+            os.environ.pop("MAPS_API_KEY2", None)
+            os.environ.pop("DB_PATH", None)
 
 
 class TestApiKey:

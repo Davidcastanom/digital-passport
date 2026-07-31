@@ -72,11 +72,10 @@ NAV_GROUPS = {
     ],
 }
 
-def _find_group(page_name):
-    for group, pages in NAV_GROUPS.items():
-        if page_name in pages:
-            return group
-    return list(NAV_GROUPS.keys())[0]
+def _nav_change(idx):
+    selected = st.session_state.get(f"nav_{idx}")
+    if selected and selected != st.session_state.get("page"):
+        st.session_state.page = selected
 
 if st.session_state.get("landing", True):
     from app.views.landing import show as show_landing
@@ -89,14 +88,11 @@ st.sidebar.markdown("---")
 if st.session_state.pop("nav_to_register", False):
     st.session_state.page = "Registrar Usuario"
 
-for group, pages in NAV_GROUPS.items():
+for idx, (group, pages) in enumerate(NAV_GROUPS.items()):
     default_index = pages.index(st.session_state.page) if st.session_state.page in pages else 0
-    selected = st.sidebar.selectbox(
-        group, pages, index=default_index, key=f"nav_{_find_group(group)}"
+    st.sidebar.selectbox(
+        group, pages, index=default_index, key=f"nav_{idx}", on_change=_nav_change, args=(idx,)
     )
-    if selected != st.session_state.page:
-        st.session_state.page = selected
-        st.rerun()
 
 page = st.session_state.page
 
