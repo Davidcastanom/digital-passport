@@ -1,23 +1,24 @@
+import json
 import streamlit as st
 import pandas as pd
 from app.database.connection import get_conn
-from app.utils.helpers import get_key_info, style_keys
+from app.database.schema import get_key_info
+from app.utils.ui import style_keys
 
 def show():
     st.title("Perfil de Conexión")
     st.markdown("Todos los datos de un usuario en un solo lugar, listo para integrarse con sistemas externos.")
     st.markdown("**Leyenda:** <span style='background:#1a3a5c;color:#00d4ff;padding:2px 8px;border-radius:4px;font-weight:bold;'>🔑 PK</span> <span style='background:#2d1b4e;color:#a855f7;padding:2px 8px;border-radius:4px;font-weight:bold;'>🔗 FK</span>", unsafe_allow_html=True)
 
-    conn = get_conn()
-    users_df = pd.read_sql("SELECT user_id, email FROM user_identity", conn)
-    conn.close()
-    if users_df.empty:
-        st.warning("No hay usuarios registrados.")
+    if not st.session_state.active_user_id:
+        st.warning("Selecciona un usuario en la barra lateral primero.")
+        if st.button("→ Registrar primer usuario"):
+            st.session_state.nav_to_register = True
+            st.rerun()
         return
 
-    user_options = {row["email"]: row["user_id"] for _, row in users_df.iterrows()}
-    selected = st.selectbox("Filtrar por correo electrónico", options=list(user_options.keys()), key="profile_email")
-    uid = user_options[selected]
+    uid = st.session_state.active_user_id
+    selected = st.session_state.active_user_email
     conn = get_conn()
 
     def show_section(title, table, uid):
@@ -59,4 +60,9 @@ def show():
         "eventos_auditoria": df_evt.to_dict(orient="records"),
     }
     st.json(profile)
+    st.download_button(
+        "📦 Descargar JSON del perfil",
+        json.dumps(profile, ensure_ascii=False, indent=2).encode("utf-8"),
+        f"perfil_{uid[:8]}.json", "application/json"
+    )
     conn.close()

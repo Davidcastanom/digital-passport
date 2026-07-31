@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from app.database.connection import get_conn, get_tables
+from app.database.connection import get_conn, get_tables, validate_table_name
 
 def show():
     st.title("Pasaporte Digital para Comercio Exterior")
@@ -8,8 +8,10 @@ def show():
     conn = get_conn()
     c = conn.cursor()
 
+    known_tables = get_tables(conn)
     counts = {}
-    for t in get_tables(conn):
+    for t in known_tables:
+        validate_table_name(t, conn)
         c.execute(f'SELECT COUNT(*) FROM "{t}"')
         counts[t] = c.fetchone()[0]
 
@@ -33,6 +35,35 @@ def show():
     with col10: st.metric("Perfil Científico", counts.get("health_science_sectorial", 0))
     with col11: st.metric("Medidas Industriales", counts.get("industry_measurements", 0))
     with col12: st.metric("Vistas del Sistema", num_views)
+
+    st.subheader("Progreso del Pasaporte")
+    if st.session_state.active_user_id:
+        uid = st.session_state.active_user_id
+        satellite = {
+            "Identidad": "user_identity",
+            "Geolocalización": "user_geolocation",
+            "Idioma/Cultura": "user_culture_language",
+            "Financiero": "user_financials",
+            "Actividad Legal": "legal_economic_activity",
+            "Comercio": "trade_supply_chain",
+            "Red": "network_infrastructure",
+            "Ciencia": "health_science_sectorial",
+        }
+        done = 0
+        for label, table in satellite.items():
+            c.execute(f'SELECT COUNT(*) FROM "{table}" WHERE user_id = ?', (uid,))
+            if c.fetchone()[0] > 0:
+                done += 1
+        pct = int(done / len(satellite) * 100)
+        st.progress(pct / 100, text=f"Pasaporte completado al {pct}% ({done}/{len(satellite)} secciones)")
+        missing = [label for label, table in satellite.items()
+                   if c.execute(f'SELECT COUNT(*) FROM "{table}" WHERE user_id = ?', (uid,)).fetchone()[0] == 0]
+        if missing:
+            st.info("Faltan: " + ", ".join(missing))
+        else:
+            st.success("Pasaporte completo. ¡Listo para integración externa!")
+    else:
+        st.info("Selecciona un usuario en la barra lateral para ver su progreso.")
 
     st.subheader("Vista rápida")
     try:

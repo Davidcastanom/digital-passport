@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from app.database.connection import get_conn
+from app.database.connection import get_conn, validate_table_name
 
 def show():
     st.title("Arquitectura de la Base de Datos")
@@ -12,24 +12,21 @@ def show():
     tables = [r[0] for r in c.fetchall()]
     c.execute("SELECT name, sql FROM sqlite_master WHERE type='view' ORDER BY name")
     views_ddl = c.fetchall()
-    conn.close()
-
-    conn2 = get_conn()
-    c2 = conn2.cursor()
 
     erd_parts = ["erDiagram"]
     table_columns = {}
     fk_relations = []
 
     for tname in tables:
+        validate_table_name(tname, conn)
         cols = []
-        for row in c2.execute(f'PRAGMA table_info("{tname}")'):
+        for row in c.execute(f'PRAGMA table_info("{tname}")'):
             cname = row[1]
             ctype = row[2].split("(")[0].upper() if row[2] else "TEXT"
             nullable = "NOT NULL" if row[3] else "NULL"
             pk = "PK" if row[5] > 0 else ""
             cols.append({"name": cname, "type": ctype, "nullable": nullable, "pk": pk})
-        for row in c2.execute(f'PRAGMA foreign_key_list("{tname}")'):
+        for row in c.execute(f'PRAGMA foreign_key_list("{tname}")'):
             fk_relations.append((tname, row[2], row[3]))
         table_columns[tname] = cols
         props = "\n".join([f'        {c["type"]} "{c["name"]}" {c["nullable"]}' for c in cols])
@@ -37,8 +34,6 @@ def show():
 
     for child, parent, col in fk_relations:
         erd_parts.append(f'    {parent} ||--o{{ {child} : "tiene"')
-
-    conn2.close()
 
     erd_code = "\n".join(erd_parts)
 
@@ -53,25 +48,24 @@ def show():
     for tname in tables:
         with st.expander(f"📋 {tname}"):
             cols = table_columns[tname]
-            for c in cols:
-                if c["name"] in fk_by_table.get(tname, set()):
-                    c["fk"] = "🔗 FK"
+            for col in cols:
+                if col["name"] in fk_by_table.get(tname, set()):
+                    col["fk"] = "🔗 FK"
                 else:
-                    c["fk"] = ""
-                if c["pk"]:
-                    c["pk"] = "🔑 PK"
+                    col["fk"] = ""
+                if col["pk"]:
+                    col["pk"] = "🔑 PK"
             st.dataframe(pd.DataFrame(cols), use_container_width=True)
 
     st.subheader("Vistas del Sistema")
     for vname, ddl in views_ddl:
         with st.expander(f"👁️ {vname}"):
-            conn3 = get_conn()
             try:
-                df_v = pd.read_sql(f'SELECT * FROM "{vname}" LIMIT 5', conn3)
+                validate_table_name(vname, conn)
+                df_v = pd.read_sql(f'SELECT * FROM "{vname}" LIMIT 5', conn)
                 st.dataframe(df_v, use_container_width=True)
             except Exception:
                 st.info("Vista sin datos aún.")
-            conn3.close()
             st.code(ddl, language="sql")
 
     st.subheader("Relaciones entre tablas")
@@ -80,3 +74,5 @@ def show():
         rel_data.append({"Tabla origen": src, "Columna FK": col, "Tabla destino": dst})
     if rel_data:
         st.dataframe(pd.DataFrame(rel_data), use_container_width=True)
+
+    conn.close()

@@ -41,19 +41,17 @@ def show():
             Recorre todos los puntos actualizando el slider cada 0.3s.
             """)
 
-    conn = get_conn()
-    users_df = pd.read_sql("SELECT user_id, email FROM user_identity", conn)
-    conn.close()
-
-    if users_df.empty:
-        st.warning("No hay usuarios registrados.")
+    if not st.session_state.active_user_id:
+        st.warning("Selecciona un usuario en la barra lateral primero.")
+        if st.button("→ Registrar primer usuario"):
+            st.session_state.nav_to_register = True
+            st.rerun()
         return
 
-    from app.utils.helpers import generate_beacons
+    uid = st.session_state.active_user_id
+    email = st.session_state.active_user_email
 
-    user_options = {row["email"]: row["user_id"] for _, row in users_df.iterrows()}
-    email = st.selectbox("Selecciona un usuario", options=list(user_options.keys()), key="telemetry_user")
-    uid = user_options[email]
+    from app.database.seed import generate_beacons
 
     col_gen, col_num = st.columns([1, 3])
     with col_gen:
@@ -63,9 +61,10 @@ def show():
     if gen_click:
         if st.session_state.current_coords:
             st.session_state.route_history.append(st.session_state.current_coords)
-        conn_gen = get_conn()
-        generate_beacons(conn_gen, uid, num_beacons=int(num_beacons))
-        conn_gen.close()
+        with st.spinner("Generando balizas GPS..."):
+            conn_gen = get_conn()
+            generate_beacons(conn_gen, uid, num_beacons=int(num_beacons))
+            conn_gen.close()
         st.rerun()
 
     conn = get_conn()
@@ -153,6 +152,16 @@ def show():
             }}, function(result, status) {{
                 if (status === google.maps.DirectionsStatus.OK) {{
                     renderer.setDirections(result);
+                }} else {{
+                    addPolyline(waypoints, color, 0.6, weight);
+                    if (status === google.maps.DirectionsStatus.REQUEST_DENIED) {{
+                        var banner = document.createElement('div');
+                        banner.style.cssText = 'position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#7c2d12;color:#fdba74;padding:8px 14px;border-radius:8px;font-family:sans-serif;font-size:12px;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+                        banner.innerHTML = 'Ruta por carretera no disponible — habilita la <strong>Directions API</strong> en Google Cloud Console.';
+                        banner.onclick = function() {{ window.open('https://console.cloud.google.com/apis/library/directions-backend.googleapis.com', '_blank'); }};
+                        banner.style.cursor = 'pointer';
+                        document.getElementById('map').parentElement.appendChild(banner);
+                    }}
                 }}
             }});
         }}
@@ -261,3 +270,5 @@ def show():
 
     with st.expander("📊 Ver tabla de balizas"):
         st.dataframe(df, use_container_width=True)
+        if not df.empty:
+            st.download_button("📦 Descargar JSON", df.to_json(orient="records").encode("utf-8"), "telemetria.json", "application/json")

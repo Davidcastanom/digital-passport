@@ -1,13 +1,20 @@
 import os
+import sys
 
 _env_loaded = False
+
+def _get_project_root():
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
 def _ensure_env():
     global _env_loaded
     if _env_loaded:
         return
     _env_loaded = True
     try:
-        dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+        dotenv_path = os.path.join(_get_project_root(), ".env")
         if os.path.exists(dotenv_path):
             with open(dotenv_path, encoding="utf-8") as f:
                 for line in f:
@@ -37,10 +44,11 @@ def get_db_path():
     env_path = os.getenv("DB_PATH", "")
     if env_path:
         return env_path
-    base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    root = _get_project_root()
     candidates = [
-        os.path.join(base, "Esquema Relacional Global_David.db"),
-        os.path.join(base, "data", "pasaporte_digital.db"),
+        os.path.join(root, "Esquema Relacional Global_David.db"),
+        os.path.join(root, "data", "pasaporte_digital.db"),
+        os.path.abspath("Esquema Relacional Global_David.db"),
     ]
     for p in candidates:
         if os.path.exists(p):

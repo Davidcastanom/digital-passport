@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone
 from app.database.connection import get_conn
-from app.utils.helpers import gen_id
+from app.utils.id_gen import gen_id
 
 def show():
     st.title("Auditoría de Seguridad")
@@ -11,6 +11,8 @@ def show():
     try:
         df = pd.read_sql("SELECT * FROM view_auditoria_seguridad ORDER BY fecha_hora_utc DESC", conn)
         st.dataframe(df, use_container_width=True)
+        if not df.empty:
+            st.download_button("📦 Descargar JSON", df.to_json(orient="records").encode("utf-8"), "auditoria.json", "application/json")
     except Exception:
         st.info("No hay eventos registrados aún.")
     conn.close()

@@ -94,7 +94,7 @@ body{{background:#070b24;color:white;overflow-x:hidden;}}
 .card-icon{{font-size:20px;}}
 .card-title{{color:white;font-weight:700;font-size:14px;}}
 .card-desc{{color:#94a3b8;font-size:13px;line-height:1.5;margin-bottom:6px;}}
-.card-tags{{color:#475569;font-size:11px;}}
+.card-tags{{color:#64748b;font-size:12px;}}
 .card-tags span{{color:#00d4ff;}}
 .grid-sec{{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:8px;}}
 .sec{{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(124,58,237,0.05));border:1px solid rgba(0,212,255,0.12);border-radius:14px;padding:8px 10px;text-align:center;}}
@@ -126,10 +126,10 @@ body{{background:#070b24;color:white;overflow-x:hidden;}}
 </style>
 </head>
 <body>
-<div class="bg"><img src="{IMG_FONDO}"></div>
+<div class="bg" id="bgWrap"><img src="{IMG_FONDO}" onerror="this.style.display='none';document.getElementById('bgWrap').style.background='linear-gradient(160deg,#0f172a 0%,#070b24 45%,#1a1a3e 100%)';"></div>
 <div class="overlay"></div>
 <div class="content">
-<div class="header"><img src="{IMG_LOGO}"><span>TRADETECH SOLUTIONS</span></div>
+<div class="header" id="logoWrap"><img src="{IMG_LOGO}" onerror="this.remove();this.parentElement.insertAdjacentHTML('afterbegin','<span style=\'font-size:28px;font-weight:900;color:#00d4ff;border:2px solid #00d4ff;border-radius:12px;padding:4px 10px;\'>PD</span>')"><span>TRADETECH SOLUTIONS</span></div>
 <div class="hero">
 <div class="tag">Sistema de Identidad Digital y Logística Internacional</div>
 <h1>Pasaporte Digital</h1>
