@@ -11,6 +11,54 @@ Sistema de identidad digital y logística internacional con telemetría geoespac
 - Python 3.10+
 - API Key de Google Maps (Maps JavaScript API + Directions API habilitadas)
 
+## 🔐 Tu propia API Key (paso obligatorio)
+
+La clave de API de Google Maps es **personal y de pago**: si se comparte, el dueño de la cuenta asume el costo de uso de todos los demás. Por eso el repositorio **NO contiene claves reales** (solo `.env.example` con un valor de ejemplo) y cada persona debe generar la suya.
+
+### 1. Crear la clave en Google Cloud
+
+1. Entrar a [console.cloud.google.com](https://console.cloud.google.com)
+2. Crear un proyecto (o usar uno existente)
+3. Ir a **APIs & Services → Library** y habilitar:
+   - `Maps JavaScript API`
+   - `Directions API`
+4. Ir a **APIs & Services → Credentials → Create Credentials → API Key**
+5. Copiar la clave generada (empieza con `AIza...`)
+
+### 2. Proteger la clave (CRÍTICO)
+
+En la clave recién creada pulsar **Edit API key** y aplicar restricciones:
+
+| Restricción | Configuración | Motivo |
+|---|---|---|
+| Application restrictions | "Web" + tu dominio (o `localhost:8501` en local) | Solo tu app puede usarla |
+| API restrictions | Solo `Maps JavaScript API` + `Directions API` | No puede usarse para otros servicios |
+
+### 3. Configurar tu `.env` local
+
+```bash
+cp .env.example .env
+```
+
+Editar `.env` y reemplazar el valor de ejemplo:
+
+```
+MAPS_API_KEY=AIzaSyTU_CLAVE_REAL
+DB_PATH=
+```
+
+> ⚠️ `.env` **ya está en `.gitignore`** y nunca debe subirse. Verifica con `git status` que `.env` NO aparezca como archivo nuevo antes de hacer commit.
+
+### 4. Desplegar en Streamlit Cloud (solo si publicas)
+
+NO uses `.env` en la nube. Configúralo en **App → Settings → Secrets**:
+
+```toml
+MAPS_API_KEY="AIzaSyTU_CLAVE_REAL"
+```
+
+> 💡 Sin API key la app **sigue funcionando** (datos, validaciones, auditoría y mapa con fallback). Solo las rutas por carretera de la telemetría requieren la clave + la `Directions API` habilitada.
+
 ## 🚀 Inicio rápido
 
 ### Local
@@ -28,9 +76,9 @@ venv\Scripts\activate  # Windows
 # 3. Instalar dependencias
 pip install -r requirements.txt
 
-# 4. Configurar API Key
+# 4. Configurar tu API Key (ver sección "Tu propia API Key")
 cp .env.example .env
-# Editar .env: pegar tu MAPS_API_KEY
+# Editar .env: pegar TU MAPS_API_KEY personal
 
 # 5. Ejecutar
 streamlit run app/main.py
@@ -45,6 +93,8 @@ Ejecutar `dist/PasaporteDigital.exe` (versión portable).
 ```bash
 python -m pytest tests/ -v
 ```
+
+58 tests automatizados: validadores, esquema de BD, resolución de rutas, generación de datos, navegación y estabilidad de imports.
 
 ## 🏗️ Estructura del proyecto
 
@@ -81,7 +131,10 @@ digital-passport/
 │   ├── test_validators.py      # 9 validadores, casos positivos/negativos
 │   ├── test_db.py              # Tablas, whitelist SQL, PK/FK reales
 │   ├── test_config.py          # Resolución de rutas y .env
-│   └── test_seed.py            # Generación de balizas en DB temporal
+│   ├── test_seed.py            # Generación de balizas en DB temporal
+│   ├── test_utils.py           # gen_id, haversine, style_keys, shim helpers
+│   ├── test_navigation.py      # Navegación por AppTest (sin keys duplicadas)
+│   └── test_main_safe_import.py # Reintento de imports (race de Streamlit)
 ├── .streamlit/
 │   └── config.toml             # Tema oscuro (#070b24 / #0f172a / #00d4ff)
 ├── scripts/
@@ -107,11 +160,12 @@ digital-passport/
 
 ## 🔐 Seguridad
 
-- API Key vía `.env` o Streamlit Secrets (nunca en código)
+- API Key vía `.env` o Streamlit Secrets (nunca en código) — ver [Tu propia API Key](#-tu-propia-api-key-paso-obligatorio)
 - `validate_table_name()` contra whitelist previene SQL injection en SQL dinámico
 - Validación de formato en todos los campos de entrada (IBAN, email, IP, MAC, ISCO-08, DOI, HS Code, Incoterm)
 - `_get_project_root()` con soporte para `sys.frozen` (PyInstaller) + fallback CWD
 - `.gitignore` excluye `.env`, `*.bak`, `__pycache__/`
+- Reintento automático de imports al arrancar (mitiga race condition de Streamlit en producción)
 
 ## 🎨 UX
 
@@ -128,7 +182,7 @@ digital-passport/
 
 Ver `docs/DEPLOY.md`.
 
-Para Streamlit Cloud: configurar `MAPS_API_KEY` en **Secrets** (Settings → Secrets).
+Para Streamlit Cloud: configurar tu `MAPS_API_KEY` propia en **Secrets** (Settings → Secrets), ver [Tu propia API Key](#-tu-propia-api-key-paso-obligatorio).
 
 ## ⚠️ Notas de mantenimiento
 
