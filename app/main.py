@@ -50,7 +50,6 @@ if __name__ == "__main__":
         .stAlert { background: #0f172a !important; border: 1px solid rgba(255,255,255,0.08) !important; color: #cbd5e1 !important; }
         .st-b7 { border-color: rgba(255,255,255,0.08) !important; }
         footer { display: none !important; }
-        #MainMenu { display: none !important; }
         .stDeployButton { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
